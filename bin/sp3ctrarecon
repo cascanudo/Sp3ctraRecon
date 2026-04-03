@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+IFS=$'\n\t'
+
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+if command -v readlink >/dev/null 2>&1; then
+  SCRIPT_PATH="$(readlink -f "$SCRIPT_PATH" 2>/dev/null || printf '%s' "$SCRIPT_PATH")"
+fi
+SP3CTRA_ROOT="$(cd "$(dirname "$SCRIPT_PATH")/.." && pwd)"
+export SP3CTRA_ROOT
+
+source "${SP3CTRA_ROOT}/lib/app.sh"
+source "${SP3CTRA_ROOT}/lib/i18n.sh"
+source "${SP3CTRA_ROOT}/lib/ui.sh"
+source "${SP3CTRA_ROOT}/lib/validators.sh"
+source "${SP3CTRA_ROOT}/lib/core.sh"
+source "${SP3CTRA_ROOT}/lib/reporting.sh"
+source "${SP3CTRA_ROOT}/lib/cli.sh"
+source "${SP3CTRA_ROOT}/modules/recon.sh"
+
+load_i18n
+trap 'spinner_stop 2>/dev/null; on_error "$LINENO" "$?"' ERR
+
+main() {
+  parse_args "$@"
+  validate_ui_config
+
+  if (( SHOW_VERSION_ONLY == 1 )); then
+    echo "${APP_NAME} ${VERSION}"
+    exit 0
+  fi
+  if (( LIST_MODULES_ONLY == 1 )); then
+    list_modules
+    exit 0
+  fi
+  if (( LIST_PROFILES_ONLY == 1 )); then
+    list_profiles
+    exit 0
+  fi
+  if (( SELF_CHECK_ONLY == 1 )); then
+    self_check
+    exit 0
+  fi
+
+  banner
+  if (( NON_INTERACTIVE == 0 )); then
+    choose_language
+    choose_teach_mode
+    choose_profile
+  fi
+
+  validate_execution_config
+  status ok "$(msg selected_profile): ${PROFILE} | threads=${PROFILE_THREADS} | rate=${PROFILE_RATE} | timeout=${PROFILE_TIMEOUT}s"
+
+  setup_target
+  create_session
+  detect_tools
+  (( QUIET_MODE == 0 )) && tool_summary
+
+  if (( NON_INTERACTIVE == 1 )); then
+    auto_recon
+    finalize_report
+  else
+    show_main_menu
+  fi
+}
+
+main "$@"

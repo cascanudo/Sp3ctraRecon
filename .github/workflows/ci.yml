@@ -1,0 +1,17 @@
+name: bash-ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash Syntax
+        run: |
+          bash -n bin/sp3ctrarecon
+          for f in lib/*.sh modules/*.sh tests/*.sh install.sh uninstall.sh; do
+            bash -n "$f"
+          done
+      - name: Validators
+        run: bash tests/validators.sh
+      - name: Smoke (includes install/uninstall checks)
+        run: bash tests/smoke.sh

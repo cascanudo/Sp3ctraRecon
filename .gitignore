@@ -1,0 +1,15 @@
+sp3ctrarecon_*/
+*.stderr.log
+*.sqlite3
+*.log
+screenshots/
+reports/
+raw/
+summary/
+logs/
+tmp/
+.tmp/
+.DS_Store
+*.swp
+*.swo
+*~
